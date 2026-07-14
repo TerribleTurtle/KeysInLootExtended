@@ -1,28 +1,29 @@
-import { FileSystem } from "@spt/utils/FileSystem";
-import { JsonUtil } from "@spt/utils/JsonUtil";
-import { IKeysInLootCoreConfig, IKeysInLootLocationConfig, IKeysInLootRarityConfig } from "./IKeysInLootConfig";
-import path from "path";
-import { ILocation } from "@spt/models/eft/common/ILocation";
-
-export enum LocationsEnum 
-    {
-    CUSTOMS = "customs",
-    FACTORY_DAY = "factory_day",
-    FACTORY_NIGHT = "factory_night",
-    INTERCHANGE = "interchange",
-    LABORATORY = "laboratory",
-    LIGHTHOUSE = "lighthouse",
-    RESERVE = "reserve",
-    GROUND_ZERO = "ground_zero",
-    GROUND_ZERO_HIGH = "ground_zero_high",
-    SHORELINE = "shoreline",
-    STREETS_OF_TARKOV = "streets_of_tarkov",
-    WOODS = "woods"
-}
-
-export class ConfigLoader
-{
-    public static locationIdToEnum: Record<string, LocationsEnum> = {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConfigLoader = exports.LocationsEnum = void 0;
+const path_1 = __importDefault(require("path"));
+var LocationsEnum;
+(function (LocationsEnum) {
+    LocationsEnum["CUSTOMS"] = "customs";
+    LocationsEnum["FACTORY_DAY"] = "factory_day";
+    LocationsEnum["FACTORY_NIGHT"] = "factory_night";
+    LocationsEnum["INTERCHANGE"] = "interchange";
+    LocationsEnum["LABORATORY"] = "laboratory";
+    LocationsEnum["LIGHTHOUSE"] = "lighthouse";
+    LocationsEnum["RESERVE"] = "reserve";
+    LocationsEnum["GROUND_ZERO"] = "ground_zero";
+    LocationsEnum["GROUND_ZERO_HIGH"] = "ground_zero_high";
+    LocationsEnum["SHORELINE"] = "shoreline";
+    LocationsEnum["STREETS_OF_TARKOV"] = "streets_of_tarkov";
+    LocationsEnum["WOODS"] = "woods";
+})(LocationsEnum || (exports.LocationsEnum = LocationsEnum = {}));
+class ConfigLoader {
+    fileSystem;
+    jsonUtil;
+    static locationIdToEnum = {
         "bigmap": LocationsEnum.CUSTOMS,
         // eslint-disable-next-line @typescript-eslint/naming-convention
         "factory4_day": LocationsEnum.FACTORY_DAY,
@@ -39,22 +40,16 @@ export class ConfigLoader
         "TarkovStreets": LocationsEnum.STREETS_OF_TARKOV,
         "Woods": LocationsEnum.WOODS
     };
-
-    constructor(
-        private fileSystem: FileSystem,
-        private jsonUtil: JsonUtil
-    ) 
-    { }
-
-    public async loadCoreConfig() : Promise<IKeysInLootCoreConfig>
-    {
-        const config = await this.loadConfig<IKeysInLootCoreConfig>("../config.jsonc");
-        
+    constructor(fileSystem, jsonUtil) {
+        this.fileSystem = fileSystem;
+        this.jsonUtil = jsonUtil;
+    }
+    async loadCoreConfig() {
+        const config = await this.loadConfig("../config.jsonc");
         // Strict schema check for backward compatibility to prevent server crash
         if (!config.keyWeight || typeof config.keyWeight !== "object" || !config.keycardWeight || typeof config.keycardWeight !== "object") {
             throw new Error("[KeysInLootExtended] FATAL: Your config.jsonc is outdated. 'keyWeight' and 'keycardWeight' must now be rarity objects, not flat numbers. Please update your config.jsonc to the latest version!");
         }
-
         // Apply profile overrides
         switch (config.activeProfile) {
             case "Vanilla Plus":
@@ -102,65 +97,49 @@ export class ConfigLoader
                 config.activeProfile = "Custom";
                 break;
         }
-        
         return config;
     }
-
-    public async loadLocationConfig(location: LocationsEnum) : Promise<IKeysInLootLocationConfig>
-    {
+    async loadLocationConfig(location) {
         const fileName = `${location}.jsonc`;
-        const filePath = path.resolve(__dirname, "../locations", fileName);
-        return this.loadConfig<IKeysInLootLocationConfig>(filePath);
+        const filePath = path_1.default.resolve(__dirname, "../locations", fileName);
+        return this.loadConfig(filePath);
     }
-
-    public async loadConfig<T>(relativeFilePath: string): Promise<T>
-    {
-        const configPath = path.resolve(__dirname, relativeFilePath);
+    async loadConfig(relativeFilePath) {
+        const configPath = path_1.default.resolve(__dirname, relativeFilePath);
         const configFileContent = await this.fileSystem.read(configPath);
         const configString = configFileContent.toString();
-        const configModel = this.jsonUtil.deserializeJsonC<T>(configString);
-        if (!configModel) 
-        {
+        const configModel = this.jsonUtil.deserializeJsonC(configString);
+        if (!configModel) {
             throw new Error(`Failed to deserialize config from ${configPath}`);
         }
         return configModel;
     }
-
-    public async getOrCreateLocationConfig(location: ILocation, coreConfig: IKeysInLootCoreConfig): Promise<IKeysInLootLocationConfig>
-    {
-        if (coreConfig.enableLocationsConfig)
-        {
+    async getOrCreateLocationConfig(location, coreConfig) {
+        if (coreConfig.enableLocationsConfig) {
             return await this.loadLocationSpecificConfig(location);
         }
-        else
-        {
+        else {
             return ConfigLoader.createDefaultLocationConfig(coreConfig.keyWeight, coreConfig.keycardWeight);
         }
     }
-
     /// <summary>
     /// Loads the location-specific configuration for keys in loot.
     /// </summary>
-    private loadLocationSpecificConfig(location: ILocation): Promise<IKeysInLootLocationConfig>
-    {
+    loadLocationSpecificConfig(location) {
         const enumValue = ConfigLoader.locationIdToEnum[location.base.Id];
-        if (!enumValue) 
-        {
+        if (!enumValue) {
             throw new Error(`Unknown location: ${location.base.Id}`);
         }
-
         // Load the config for this location from file
         return this.loadLocationConfig(enumValue);
     }
-
     /// <summary>
     /// Creates a default location configuration with the global weights for keys and keycards.
     /// </summary>
-    private static createDefaultLocationConfig(keyWeight: IKeysInLootRarityConfig, keycardWeight: IKeysInLootRarityConfig): IKeysInLootLocationConfig 
-    {
-        const containerConfig = { 
-            key: keyWeight, 
-            keycard: keycardWeight 
+    static createDefaultLocationConfig(keyWeight, keycardWeight) {
+        const containerConfig = {
+            key: keyWeight,
+            keycard: keycardWeight
         };
         return {
             jacketContainer: containerConfig,
@@ -169,4 +148,4 @@ export class ConfigLoader
         };
     }
 }
-
+exports.ConfigLoader = ConfigLoader;
