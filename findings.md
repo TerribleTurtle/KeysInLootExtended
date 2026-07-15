@@ -31,6 +31,7 @@
 ## Item Template & Database Manipulation
 *   **Memory Optimizations (GC Pressure):** Looping over lists inside generic enumerations forces C# to allocate a closure Lambda per execution, heavily impacting GC during server boot. **Always convert lists to pre-computed `HashSet<T>` and execute O(1) memory-safe `Contains` operations.**
 *   **Economy Adjustments:** Flea Prices accessed via `Templates.Prices`. Trader Assorts via `Traders[traderId].Assort`. Adjustments MUST use O(1) hash sets of injected keys to limit blast radius.
+*   **[2026-07-15] Economy Pivot (Handbook over Assorts):** Instead of executing expensive O(N*M) iterations over every Trader's individual Assort list as originally planned, Trader Base Prices were pivoted to iterate over `tables.Templates.Handbook.Items` instead. The Handbook acts as the global base price index for all traders, making this a significant architectural optimization.
 *   **MongoId Parsing Crashes:** Items added by other mods might contain invalid `MongoId` formats, causing server crashes when iterating arrays. The C# port must wrap `new MongoId(item.Id)` in a try-catch block for `FormatException` to skip malformed items and prevent server halts.
 *   **Serialization & Testing:** Standard JSON deserialization fails on `MongoId` arrays. For isolated O(1) testing without heavy Server environments, mock properties via reflection using `System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject`.
 
