@@ -5,3 +5,6 @@
 - **Packaging Structure:** The release `.zip` must package the mod inside a drag-and-drop structure: `SPT/user/mods/ModName/`.
 - **Avoid "zz" Unless Necessary:** The `zz` prefix (e.g., `zzKeysInLootExtended`) forces the mod to load last in SPT, but causes visual clutter. Do not use it unless explicitly requested or mathematically required for override priority.
 - **Ignore Source Files:** Ensure `.buildignore` ignores `**/*.ts` and other dev-only files (like `.gitignore`, `tsconfig.json`, `.agents`) so the final release zip is lightweight.
+
+## Deployment & Testing Rules
+- **Live Mod Directory Strict Read-Only:** When interacting with the user's live SPT installation (`B:\Game Storage\SPT\SPT\user\mods`), treat the directory and all other mods as strictly read-only. Only modify files within our specific `KeysInLootExtended` mod directory.
